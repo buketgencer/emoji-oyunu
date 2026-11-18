@@ -1,0 +1,9 @@
+{
+  "soruSuresiSaniye": 90,
+  "soruSayisi": 20,
+  "karisikSira": true,
+  "kategoriyiGoster": true,
+  "dogruTahminPuanlari": "3,2,1",
+  "bingoPuanlari": "5,3,2",
+  "sonrakiHerBingoPuani": 1
+}

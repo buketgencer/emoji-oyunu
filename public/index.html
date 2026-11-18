@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emoji Tahmin + Bingo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff8ef; --ink:#2b2340; --muted:#7a7290; --card:#fff; --soft:#fbf3e8; --line:#efe4d6;
+  --coral:#ff6b57; --coral-d:#e2523f; --teal:#14b8a6; --teal-d:#0f9488; --violet:#7c5cff; --violet-d:#6847f0;
+  --sun:#ffc93c; --ok:#16a34a; --okbg:#dcfce7; --bad:#dc2626; --badbg:#fee2e2;
+  --shadow:0 8px 28px rgba(43,35,64,.09); --r:20px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;color:inherit}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,textarea,select{font-family:inherit;color:inherit}
+.hidden{display:none!important}
+
+/* ---------- ortak ---------- */
+.btn{padding:11px 18px;border-radius:13px;font-weight:800;font-size:14.5px;background:var(--soft);transition:transform .1s,background .15s,box-shadow .15s;display:inline-flex;align-items:center;gap:7px;justify-content:center;white-space:nowrap}
+.btn:hover:not(:disabled){transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn.coral{background:var(--coral);color:#fff}.btn.coral:hover:not(:disabled){background:var(--coral-d)}
+.btn.teal{background:var(--teal);color:#fff}.btn.teal:hover:not(:disabled){background:var(--teal-d)}
+.btn.violet{background:var(--violet);color:#fff}.btn.violet:hover:not(:disabled){background:var(--violet-d)}
+.btn.ghost{background:transparent;border:2px solid var(--line)}
+.btn.sm{padding:7px 12px;font-size:13px;border-radius:10px}
+.btn.lg{padding:15px 26px;font-size:17px;border-radius:16px}
+.field{width:100%;padding:14px 16px;border-radius:14px;border:2px solid var(--line);font-size:16px;font-weight:700;background:#fff;transition:border-color .15s}
+.field:focus{outline:none;border-color:var(--coral)}
+.panel{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-weight:800;font-size:13px;background:var(--soft)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(22,163,74,.6);animation:pulse 1.6s infinite}
+.live-dot.off{background:#c9c2d6;animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.55)}70%{box-shadow:0 0 0 8px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.avatar{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;flex:0 0 auto}
+.link-btn{background:none;padding:0;font:inherit;color:var(--violet);font-weight:800;cursor:pointer}
+.link-btn:hover{text-decoration:underline}
+.back-admin{position:fixed;left:16px;bottom:16px;z-index:120;background:var(--ink);color:#fff;text-decoration:none;font-weight:900;font-size:14px;padding:11px 16px;border-radius:999px;box-shadow:var(--shadow)}
+.back-admin:hover{background:#3d3358}
+.toast-wrap{position:fixed;left:50%;top:18px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;z-index:200;pointer-events:none}
+.toast{background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-weight:800;font-size:14px;animation:pop .3s ease;box-shadow:var(--shadow)}
+.confetti{position:fixed;top:-30px;font-size:26px;animation:fall linear forwards;pointer-events:none;z-index:300}
+@keyframes fall{to{transform:translateY(112vh) rotate(560deg)}}
+
+/* ---------- giriş ---------- */
+.center-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:radial-gradient(circle at 15% 20%,#ffe3d6 0,transparent 40%),radial-gradient(circle at 85% 80%,#e6defe 0,transparent 42%),var(--bg)}
+.join-card{width:min(440px,100%);padding:34px 32px 28px;text-align:center;animation:rise .4s ease}
+.logo{font-size:30px;font-weight:900;letter-spacing:-.5px;line-height:1.1}
+.logo span{color:var(--coral)}
+.logo-emoji{font-size:56px;margin-bottom:6px;display:block}
+.join-card p.sub{margin:8px 0 22px;color:var(--muted);font-weight:700}
+.join-card .form-col{display:flex;flex-direction:column;gap:12px}
+.err{color:var(--bad);font-weight:800;font-size:13.5px;min-height:18px}
+.join-foot{margin-top:18px;font-size:13px;font-weight:700;color:var(--muted)}
+.join-foot a{color:var(--violet);text-decoration:none;font-weight:800}
+.wait-box{display:flex;align-items:center;gap:10px;justify-content:center;font-weight:800;color:var(--muted);font-size:14px}
+.spinner{width:16px;height:16px;border:3px solid var(--line);border-top-color:var(--coral);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- oyun düzeni ---------- */
+#vGame{height:100vh;display:flex;flex-direction:column;gap:12px;padding:12px 14px}
+#vGame>.main{flex:1 1 0}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px}
+.topbar .logo{font-size:21px}
+.top-right{display:flex;align-items:center;gap:10px}
+.me-chip{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;background:var(--soft);padding:4px 12px 4px 4px;border-radius:999px}
+.admin-badge{background:var(--ink);color:#fff}
+
+.adminbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px}
+.adminbar .btn{padding:8px 12px;font-size:13.5px;border-radius:11px}
+.adminbar .answer-peek{padding:6px 10px;font-size:13px}
+.adminbar .sep{width:1px;height:26px;background:var(--line);margin:0 4px}
+.answer-peek{margin-left:auto;font-weight:800;font-size:13.5px;background:var(--soft);padding:7px 12px;border-radius:10px;cursor:pointer;user-select:none}
+.answer-peek b{filter:blur(6px);transition:filter .2s}
+.answer-peek:hover b,.answer-peek.show b{filter:none}
+
+.left-col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+.left-col > .stage{flex:1 1 0}
+.bingo{display:flex;flex-direction:column;gap:7px;padding:10px 12px;flex:0 0 auto}
+.bingo-head{display:flex;align-items:baseline;gap:10px;min-width:0}
+.bingo-head h3{margin:0;font-size:16px;font-weight:900}
+.bingo-head p{margin:0;font-size:11.5px;line-height:1.3;color:var(--muted);font-weight:700;flex:1;min-width:0}
+.bgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.bc{position:relative;background:var(--soft);border-radius:8px;padding:4px 7px;font-weight:800;font-size:12px;line-height:1.15;display:flex;align-items:center;justify-content:center;text-align:center;gap:4px;min-height:0;overflow:hidden;text-align:left;transition:background .15s,color .15s,transform .08s}
+.bc b{color:var(--violet);font-size:11px;flex:0 0 auto}
+.bc span{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.bc.click{cursor:pointer}
+.bc.click:hover{background:#f3eadc}
+.bc.click.on:hover{background:var(--violet-d)}
+.bc.click.win:hover{background:var(--coral-d)}
+.bc.click:active{transform:scale(.97)}
+.bc.on{background:var(--violet);color:#fff}
+.bc.on b{color:#e7e0ff}
+.bc.on::after{content:"✓";font-weight:900;font-size:11px}
+.bc.win{background:var(--coral);color:#fff}
+.bc.win b{color:#ffe3dc}
+.bc .cnt{font-size:11px;background:#fff;color:var(--violet);border-radius:999px;padding:1px 7px;font-weight:900}
+.bingo-done{flex:0 0 auto;font-weight:900;color:var(--coral);font-size:14px}
+
+.main{display:grid;grid-template-columns:minmax(0,1fr) 250px minmax(300px,25vw);gap:12px;min-height:0}
+.stage{position:relative;padding:16px 24px 18px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.stage-top{display:flex;justify-content:space-between;align-items:center}
+.qcount{font-weight:800;color:var(--muted);font-size:14px;background:var(--soft);padding:5px 13px;border-radius:999px}
+.cat{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:15px;padding:6px 15px;border-radius:999px;background:#eef9f7;color:#0f766e}
+.cat.lock{background:#f3efff;color:var(--violet)}
+.stage-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:0;text-align:center}
+.emojis{font-size:min(7.5vw,14vh);line-height:1.1;letter-spacing:6px;animation:pop .45s ease}
+.extra-l{font-size:11.5px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.extra{font-size:min(4.5vw,6.5vh);animation:pop .45s ease}
+.answer{font-size:min(3.8vw,5.6vh);font-weight:900;color:var(--coral);animation:pop .45s ease}
+.winners{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:720px}
+.wchip{display:flex;align-items:center;gap:7px;background:var(--okbg);color:#14532d;font-weight:800;font-size:14px;padding:5px 12px 5px 5px;border-radius:999px;animation:rise .35s ease both}
+.wchip small{font-weight:700;opacity:.75}
+.nobody{font-weight:800;color:var(--muted)}
+.timer{height:12px;background:var(--soft);border-radius:999px;overflow:hidden;margin-top:6px}
+.timer-bar{height:100%;width:100%;background:linear-gradient(90deg,var(--teal),var(--sun),var(--coral));transform-origin:left}
+.timer-bar.urgent{background:var(--bad)}
+.timer-row{display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--muted);font-size:13px;margin-top:4px}
+.timer-num{font-size:19px;color:var(--ink);font-variant-numeric:tabular-nums}
+.timer-num.urgent{color:var(--bad)}
+.guess-form{display:flex;gap:8px;margin-top:10px}
+.guess-form .field{padding:13px 16px;font-size:16px}
+.my-guesses{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-height:24px;justify-content:center}
+.mg{font-size:12.5px;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--soft)}
+.mg.ok{background:var(--okbg);color:#166534}
+.mg.no{background:var(--badbg);color:#991b1b;text-decoration:line-through;text-decoration-thickness:2px}
+.my-status{font-weight:900;font-size:16px;color:var(--ok);margin-top:8px;animation:pop .35s ease}
+
+.lobby{display:flex;flex-direction:column;align-items:center;gap:14px;max-width:640px}
+.lobby h2{margin:0;font-size:min(3.6vw,30px);font-weight:900}
+.lobby p{margin:0;color:var(--muted);font-weight:700;font-size:15.5px}
+.lobby-players{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.lp{display:flex;align-items:center;gap:7px;background:var(--soft);padding:4px 12px 4px 4px;border-radius:999px;font-weight:800;font-size:14px;animation:pop .35s ease}
+
+.side{display:contents}
+.main > .side > .panel{padding:14px 16px;min-height:0}
+.panel h3{margin:0 0 8px;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.lb{min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.lb-list{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:5px;padding:2px 3px 2px 2px}
+.lb-list.compact{gap:3px}
+.lb-list.compact .lb-row{padding:2px 6px 2px 3px;gap:6px;border-radius:9px}
+.lb-list.compact .avatar{width:20px!important;height:20px!important;font-size:10.5px}
+.lb-list.compact .lb-name{font-size:12.5px}
+.lb-list.compact .lb-pts{font-size:14px}
+.lb-list.compact .lb-rank{width:18px;font-size:12px}
+
+.lb-list.compact .lb-name .on,.lb-list.compact .lb-name .off{display:none}
+.lb-row.offline .lb-name{opacity:.5}
+.lb .panel-h{flex-wrap:wrap;row-gap:4px}
+.lb-list.compact .lb-x{display:none}
+.lb-list.compact .lb-row:hover .lb-x{display:inline-block}
+.lb-me{font-size:12px;font-weight:900;color:var(--coral);background:#fff1ee;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.lb-row{display:flex;align-items:center;gap:8px;padding:5px 8px 5px 5px;border-radius:12px;background:var(--soft);transition:background .3s}
+.lb-row.me{outline:2px solid var(--coral)}
+.lb-row.flash{background:var(--okbg)}
+.lb-rank{width:22px;text-align:center;font-weight:900;font-size:13px;color:var(--muted)}
+.lb-name{flex:1;min-width:0;font-weight:800;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.lb-name .off{width:7px;height:7px;border-radius:50%;background:#c9c2d6;flex:0 0 auto}
+.lb-name .on{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:0 0 auto}
+.lb-tag{font-size:12px}
+.lb-pts{font-weight:900;font-size:17px;font-variant-numeric:tabular-nums}
+.lb-pts small{font-size:11px;color:var(--violet);font-weight:900;margin-left:3px}
+.lb-x{background:transparent;color:var(--muted);font-weight:900;padding:2px 4px;font-size:13px}
+
+.chat{flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+
+.feed-note{font-size:11.5px;font-weight:800;color:var(--muted);background:var(--soft);padding:3px 9px;border-radius:999px}
+.bub{max-width:85%;align-self:flex-end;padding:7px 11px;border-radius:14px 14px 4px 14px;font-weight:800;font-size:14px;line-height:1.3;animation:rise .2s ease both;background:var(--soft)}
+.bub.no{background:#fff0ee;color:#9a3412}
+.bub.no::after{content:" ✗";color:var(--bad)}
+.bub.ok{background:var(--okbg);color:#14532d}
+.bub.ok::after{content:" ✓";color:var(--ok)}
+.bub-note{align-self:flex-end;font-size:12px;font-weight:900;color:var(--ok);margin-top:-2px}
+.msg.correct{align-self:center;text-align:center;font-weight:800;font-size:12.5px;color:#0f766e;background:#eef9f7;padding:4px 11px;border-radius:999px}
+.feed-empty{margin:auto;text-align:center;color:var(--muted);font-weight:700;font-size:13px;padding:10px;line-height:1.45}
+.stage-me{align-self:center;margin-top:8px;font-weight:900;font-size:15px;color:#14532d;background:var(--okbg);padding:6px 16px;border-radius:999px;animation:pop .35s ease}
+.tabs{display:flex;gap:4px;background:var(--soft);padding:3px;border-radius:11px}
+.tab{padding:5px 11px;border-radius:9px;font-weight:800;font-size:12.5px;background:transparent;color:var(--muted)}
+.tab.on{background:#fff;color:var(--ink);box-shadow:0 2px 6px rgba(43,35,64,.08)}
+.chat-list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:4px 2px 6px;min-height:0}
+.msg{font-size:13.5px;line-height:1.35;animation:rise .25s ease both}
+.msg .who{font-weight:900;margin-right:5px}
+.msg.sys{align-self:center;text-align:center;font-weight:800;font-size:12.5px;color:var(--muted);background:var(--soft);padding:4px 11px;border-radius:999px;max-width:95%}
+.msg.guess{align-self:center;font-weight:800;font-size:12px;color:var(--muted)}
+.msg.bingo{align-self:stretch;text-align:center;font-weight:900;font-size:14px;color:#fff;background:var(--coral);padding:7px 10px;border-radius:12px}
+.msg.reveal{align-self:stretch;text-align:center;font-weight:900;font-size:13.5px;background:#eef9f7;color:#0f766e;padding:7px 10px;border-radius:12px}
+.msg.admin .who{color:var(--violet)}
+.chat-form{display:flex;gap:6px;margin-top:6px}
+.chat-form .field{padding:10px 12px;font-size:14px;border-radius:11px}
+.gl-row{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;padding:5px 8px;border-radius:10px;background:var(--soft)}
+.gl-row.ok{background:var(--okbg)}
+.gl-row .t{margin-left:auto;color:var(--muted);font-size:11.5px;font-variant-numeric:tabular-nums}
+.gl-row button{background:#fff;border-radius:8px;padding:2px 7px;font-size:11.5px;font-weight:900}
+
+/* final */
+.final{position:absolute;inset:0;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:14px;padding:20px;z-index:5;text-align:center;overflow:auto}
+.final h1{margin:0;font-size:min(4vw,40px);font-weight:900}
+.podium{display:flex;align-items:flex-end;gap:14px;margin-top:6px}
+.pod{display:flex;flex-direction:column;align-items:center;gap:6px;animation:rise .5s ease both}
+.pod .avatar{width:54px;height:54px;font-size:21px}
+.pod-name{font-weight:900;font-size:16px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pod-pts{font-weight:800;color:var(--muted);font-size:13px}
+.pod-block{width:120px;border-radius:14px 14px 6px 6px;display:flex;align-items:flex-start;justify-content:center;padding-top:10px;font-size:30px;font-weight:900;color:#fff}
+.p1 .pod-block{height:130px;background:linear-gradient(180deg,#ffd45c,#f5b400)}
+.p2 .pod-block{height:96px;background:linear-gradient(180deg,#d6dbe4,#aeb6c4)}
+.p3 .pod-block{height:72px;background:linear-gradient(180deg,#f2b78a,#d98a52)}
+.final-table{border-collapse:collapse;min-width:min(560px,100%);font-size:15px}
+.final-table th{font-size:11.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);padding:6px 10px;text-align:left}
+.final-table td{padding:8px 10px;border-top:1px solid var(--line);font-weight:800;text-align:left}
+.final-table .n{text-align:center}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(43,35,64,.35);display:flex;align-items:center;justify-content:center;z-index:150;padding:20px}
+.modal{width:min(720px,100%);max-height:90vh;overflow:auto;padding:22px 24px;animation:pop .25s ease}
+.modal h2{margin:0 0 12px;font-size:21px;font-weight:900}
+.set-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-weight:700;font-size:14px}
+.set-row:first-of-type{border-top:none}
+.set-row input[type=number],.set-row input[type=text]{width:110px;padding:8px;border-radius:9px;border:2px solid var(--line);font-weight:800;text-align:center}
+.set-row input[type=checkbox]{width:22px;height:22px;accent-color:var(--coral)}
+.pts-inputs{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.pts-inputs label{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:800;color:var(--muted);white-space:nowrap}
+.set-row .pts-inputs input[type=number]{width:58px}
+.modal textarea{width:100%;border-radius:12px;border:2px solid var(--line);padding:10px 12px;font-size:13.5px;line-height:1.55;font-weight:600}
+.modal h4{margin:16px 0 4px;font-size:14.5px;font-weight:900}
+.modal .hint{font-size:12.5px;color:var(--muted);font-weight:700;margin:0 0 8px}
+
+@media (max-width:980px){
+  #vGame{height:auto;min-height:100vh}
+  .main{grid-template-columns:1fr}
+  .bingo-head{flex-direction:column;gap:2px}
+  .bgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lb{height:420px}
+  .chat{height:480px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ GİRİŞ ============ -->
+<div id="vJoin" class="center-wrap hidden">
+  <div class="panel join-card">
+    <span class="logo-emoji">🎬🎯</span>
+    <div class="logo">Emoji <span>Tahmin</span> + Bingo</div>
+    <p class="sub">Emojilerden filmi ya da diziyi bul, bingo kartını ilk sen tamamla!</p>
+    <div id="joinForm" class="form-col">
+      <input class="field" id="joinName" maxlength="20" placeholder="Adın (ör. Buket)" aria-label="Adın">
+      <div class="err" id="joinErr"></div>
+      <button class="btn coral lg" id="joinBtn" type="button">Oyuna katıl →</button>
+    </div>
+    <div class="join-foot">Oyunu yönetecek misin? <button type="button" class="link-btn" data-go="yonetici">Yönetici girişi</button></div>
+  </div>
+</div>
+
+<!-- ============ YÖNETİCİ GİRİŞİ ============ -->
+<div id="vAdminLogin" class="center-wrap hidden">
+  <div class="panel join-card">
+    <span class="logo-emoji">🔐</span>
+    <div class="logo">Yönetici <span>girişi</span></div>
+    <p class="sub">Oyunu sadece yönetici başlatabilir ve yönetebilir.</p>
+    <div id="pinForm" class="form-col">
+      <input class="field" id="pinInput" type="password" inputmode="numeric" maxlength="12" placeholder="Yönetici PIN'i" aria-label="Yönetici PIN'i" style="text-align:center;letter-spacing:6px">
+      <div class="err" id="pinErr"></div>
+      <button class="btn violet lg" type="button">Panele gir</button>
+    </div>
+    <div class="join-foot"><button type="button" class="link-btn" data-go="">Oyuncu girişine dön</button></div>
+  </div>
+</div>
+
+<!-- ============ OYUN ============ -->
+<div id="vGame" class="hidden">
+  <header class="panel topbar">
+    <div class="logo">🎬 Emoji <span>Tahmin</span> + Bingo</div>
+    <div class="top-right">
+      <span class="pill" id="statusPill"><span class="live-dot" id="liveDot"></span><span id="statusText">Canlı</span></span>
+      <span class="pill" id="countPill">👥 0</span>
+      <span class="me-chip" id="meChip"></span>
+      <button type="button" class="btn sm ghost hidden" id="aLogout" title="Yönetici oturumunu kapat">Çıkış</button>
+    </div>
+  </header>
+
+  <div class="panel adminbar hidden" id="adminBar">
+    <button class="btn teal" id="aStart">▶ Oyunu başlat</button>
+    <button class="btn" id="aPause">⏸ Duraklat</button>
+    <button class="btn" id="aPlus">+30 sn</button>
+    <button class="btn violet" id="aEnd">⏹ Turu bitir</button>
+    <button class="btn coral" id="aNext">Sonraki soru →</button>
+    <button class="btn" id="aPrev" title="Önceki soruyu yeniden başlatır; o sorudan alınan puanlar silinir">⏮ Önceki</button>
+    <button class="btn" id="aSkip">⏭ Atla</button>
+    <span class="sep"></span>
+    <button class="btn" id="aFinal">🏁 Final</button>
+    <button class="btn" id="aSettings">⚙ Ayarlar</button>
+    <button class="btn" id="aReset" title="Puanlar, bingo kartları, tahminler ve akış silinir; oyuncular odada kalır">🔄 Oyunu sıfırla</button>
+    <button type="button" class="btn ghost sm" id="aPreview" title="Oyuncu ekranını yeni sekmede açar">👁 Oyuncu gözünden</button>
+    <button class="btn ghost sm" id="aBots" title="Tek başına denemek için sahte oyuncular ekler">🤖 Demo oyuncular</button>
+    <span class="answer-peek" id="answerPeek" title="Üzerine gel ya da tıkla">Cevap: <b id="answerPeekTxt">—</b></span>
+  </div>
+
+
+  <div class="main">
+    <div class="left-col">
+      <section class="panel bingo" id="bingoPanel">
+        <div class="bingo-head">
+          <h3>🎯 Bingo Kartı</h3>
+          <p id="bingoHint">Bu cümleleri toplantıda <b>duyunca</b> tıkla. Satır, sütun ya da çaprazı ilk tamamlayan kazanır!</p>
+        </div>
+        <div class="bgrid" id="bgrid"></div>
+      </section>
+    <section class="panel stage" id="stage">
+      <div class="stage-top">
+        <span class="qcount" id="qcount">Lobi</span>
+        <span id="catWrap"></span>
+      </div>
+      <div class="stage-body" id="stageBody"></div>
+      <div id="timerWrap">
+        <div class="timer"><div class="timer-bar" id="timerBar"></div></div>
+        <div class="timer-row"><span id="timerLabel">Süre</span><span class="timer-num" id="timerNum">—</span></div>
+      </div>
+      <div class="stage-me hidden" id="stageMe"></div>
+      <div class="final hidden" id="final"></div>
+    </section>
+    </div>
+
+    <aside class="side">
+      <section class="panel lb">
+        <h3 class="panel-h">🏆 Sıralama <span class="muted" style="font-size:12px;font-weight:800" id="lbNote"></span></h3>
+        <div class="lb-list" id="lbList"></div>
+      </section>
+      <section class="panel chat">
+        <h3>
+          <span id="feedTitle">✍️ Tahminlerin</span>
+          <span class="tabs hidden" id="chatTabs">
+            <button class="tab on" data-tab="chat">Akış</button>
+            <button class="tab" data-tab="guesses">Tüm tahminler 🔒</button>
+          </span>
+          <span class="feed-note" id="feedNote">Sadece sen görürsün</span>
+        </h3>
+        <div class="chat-list" id="chatList"></div>
+        <div class="chat-list hidden" id="guessList"></div>
+        <div class="chat-form" id="guessForm">
+          <input class="field" id="guessInput" maxlength="60" placeholder="Tahminini yaz…" aria-label="Tahmin">
+          <button class="btn coral sm" type="button">Gönder</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<!-- ============ AYARLAR ============ -->
+<div class="modal-bg hidden" id="settingsModal">
+  <div class="panel modal">
+    <h2>⚙ Oyun ayarları</h2>
+    <div class="set-row"><span>Soru başına süre (saniye)</span><input type="number" id="sDuration" min="10" max="600"></div>
+    <div class="set-row"><span>Kaç soru oynanacak</span><input type="number" id="sNumQ" min="1" max="100"></div>
+    <div class="set-row"><span>Soruları karışık sırayla sor</span><input type="checkbox" id="sShuffle"></div>
+    <div class="set-row"><span>Kategoriyi göster (gizliyse puanlar 2 kat)</span><input type="checkbox" id="sShowCat"></div>
+    <div class="set-row"><span>Doğru tahmin puanı</span><span class="pts-inputs">
+      <label>1. bilen <input type="number" id="sP1" min="0" max="99"></label>
+      <label>2. bilen <input type="number" id="sP2" min="0" max="99"></label>
+      <label>3. ve sonrası <input type="number" id="sP3" min="0" max="99"></label></span></div>
+    <div class="set-row"><span>Bingo bonusu</span><span class="pts-inputs">
+      <label>1. bingo <input type="number" id="sB1" min="0" max="99"></label>
+      <label>2. bingo <input type="number" id="sB2" min="0" max="99"></label>
+      <label>3. ve sonrası <input type="number" id="sB3" min="0" max="99"></label></span></div>
+    <div class="set-row"><span>Aynı oyuncunun sonraki her bingosu<br><small class="muted">İlk bingodan sonra tamamlanan her yeni satır, sütun ya da çapraz</small></span><span class="pts-inputs"><label>her biri <input type="number" id="sB4" min="0" max="99"></label></span></div>
+    <h4>🎯 Bingo cümleleri</h4>
+    <p class="hint">Her satır bir kutu, ilk 16 satır kullanılır. Oyun başladıktan sonra değiştirirsen işaretler sıfırlanır.</p>
+    <textarea id="sBingo" rows="8"></textarea>
+    <h4>🎬 Sorular</h4>
+    <p class="hint">Her satır: <b>emojiler | cevap (alternatif) | kategori | ekstra ipucu</b>. Parantez içindeki isim de doğru kabul edilir.</p>
+    <textarea id="sQs" rows="8"></textarea>
+    <div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px;flex-wrap:wrap">
+      <button class="btn ghost" id="sReset">🔄 Oyunu sıfırla</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="sCancel">Kapat</button>
+        <button class="btn coral" id="sSave">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button type="button" class="back-admin hidden" id="backAdmin" data-go="yonetici">🎛 Yönetici paneline dön</button>
+<div class="toast-wrap" id="toasts"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* =====================================================================
+   TAŞIMA KATMANI
+   Socket.IO ile sunucuya bağlanır: send(msg) sunucuya gönderir,
+   onMessage(fn) sunucudan geleni alır. Mesaj türleri prototiptekiyle aynı:
+   hello, ping, join, guess, mark, state, notice (+ yönetici: admin, cmd, adminState).
+   ===================================================================== */
+var Transport = (function(){
+  var handlers = [], socket = io();
+  ["state", "notice", "adminState"].forEach(function(k){ socket.on(k, function(d){ emit(Object.assign({}, d || {}, { kind: k })); }); });
+  socket.on("connect", function(){ emit({ kind: "connect" }); });
+  socket.on("disconnect", function(){ emit({ kind: "disconnect" }); });
+  function emit(m){ handlers.forEach(function(h){ try{ h(m); }catch(err){ console.error(err); } }); }
+  return {
+    send: function(m, ack){ if(ack) socket.emit(m.kind, m, ack); else socket.emit(m.kind, m); },
+    connected: function(){ return socket.connected; },
+    onMessage: function(fn){ handlers.push(fn); }
+  };
+})();
+
+/* =====================================================================
+   YARDIMCILAR
+   ===================================================================== */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]; }); }
+function ls(k, v){ try{ if(v === undefined) return localStorage.getItem(k); if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){ return null; } }
+function toast(t){ var w = $("toasts"), d = document.createElement("div"); d.className = "toast"; d.textContent = t; w.appendChild(d); setTimeout(function(){ d.remove(); }, 2600); }
+function numOr0(v){ var n = parseInt(v, 10); return isNaN(n) || n < 0 ? 0 : n; }
+function three(s, def){ var a = nums(s, def).slice(0, 3); while(a.length < 3) a.push(a[a.length - 1]); return a; }
+function nums(s, def){ var a = String(s || "").split(/[,;\s]+/).map(function(x){ return parseInt(x, 10); }).filter(function(x){ return !isNaN(x) && x >= 0; }); return a.length ? a : def; }
+var COLORS = ["#ff6b57","#14b8a6","#7c5cff","#f59e0b","#ec4899","#0ea5e9","#22c55e","#a855f7","#ef4444","#06b6d4"];
+function colorFor(id){ id = String(id || ""); var h = 0; for(var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0; return COLORS[Math.abs(h) % COLORS.length]; }
+function avatar(p, size){ var n = (p.name || "?").trim(); return "<span class='avatar' style='background:" + colorFor(p.id) + (size ? ";width:" + size + "px;height:" + size + "px" : "") + "'>" + esc(n.charAt(0).toLocaleUpperCase("tr")) + "</span>"; }
+var LINES = (function(){ var L = [], i; for(i = 0; i < 4; i++){ L.push([i*4,i*4+1,i*4+2,i*4+3]); L.push([i,i+4,i+8,i+12]); } L.push([0,5,10,15]); L.push([3,6,9,12]); return L; })();
+function winCells(marks){ var w = []; LINES.forEach(function(l){ if(l.every(function(i){ return marks.indexOf(i) !== -1; })) w = w.concat(l); }); return w; }
+function confetti(){
+  var em = ["🎉","🎯","✨","🎬","🍿","⭐","🏆"];
+  for(var i = 0; i < 46; i++){
+    var c = document.createElement("div"); c.className = "confetti"; c.textContent = em[i % em.length];
+    c.style.left = Math.random() * 100 + "vw"; c.style.animationDuration = (2.3 + Math.random() * 2.3) + "s"; c.style.animationDelay = (Math.random() * .7) + "s";
+    document.body.appendChild(c); (function(el){ setTimeout(function(){ el.remove(); }, 5600); })(c);
+  }
+}
+function fmtSec(ms){ return (ms / 1000).toFixed(1).replace(".", ",") + " sn"; }
+
+/* =====================================================================
+   İSTEMCİ (oyuncu ve yönetici ekranı)
+   ===================================================================== */
+function toHost(m){ if(myToken && !m.token) m.token = myToken; Transport.send(m); }
+function adminCmd(name){ Transport.send({ kind: "cmd", name: name, args: [].slice.call(arguments, 1) }); }
+var adminAuthed = false;   // her açılışta / yenilemede PIN tekrar sorulur
+var adminSession = null;   // bağlantı koparsa PIN sormadan yeniden bağlanmak için (sadece bellekte)
+var role = null;              // "player" | "admin"
+// Oyuncu kimliği sunucudan gelir; gizli anahtar (token) sayesinde yenilemede aynı oyuncu olarak dönülür
+var myToken = ls("emojiCanli_token") || null;
+var myId = null;
+var myName = ls("emojiCanli_name") || "";
+var joined = false, P = null, PRIV = null, A = null, lastStateAt = 0, chatTab = "chat";
+var seenChat = {}, lastPhaseKey = "", lastBingoState = false;
+
+/* ---- sunucu saati: herkes aynı süreyi görsün ---- */
+var clockSamples = [], clockOffset = 0;
+function serverNow(){ return Date.now() + clockOffset; }
+function syncClock(){
+  if(!Transport.connected()) return;
+  var t0 = Date.now();
+  Transport.send({ kind: "ping", token: myToken || undefined }, function(r){
+    var t1 = Date.now(); if(!r || !r.t) return;
+    clockSamples.push({ rtt: t1 - t0, off: r.t - (t0 + t1) / 2 }); if(clockSamples.length > 6) clockSamples.shift();
+    clockOffset = clockSamples.slice().sort(function(a, b){ return a.rtt - b.rtt; })[0].off;
+  });
+}
+
+Transport.onMessage(function(m){
+  if(!m) return;
+  if(m.kind === "connect"){
+    clockSamples = []; syncClock(); setTimeout(syncClock, 600);
+    if(adminAuthed && adminSession){
+      Transport.send({ kind: "admin", session: adminSession }, function(r){ if(!r || !r.ok){ adminAuthed = false; adminSession = null; toast("Yönetici oturumu sona erdi, PIN'i tekrar gir."); route(); } });
+    } else if(myToken && role !== "admin"){ Transport.send({ kind: "hello", token: myToken }); }
+    return;
+  }
+  if(m.kind === "disconnect"){ if(P) render(); return; }
+  if(m.kind === "state"){
+    lastStateAt = Date.now(); P = m.pub; PRIV = m.priv || null;
+    if(!clockSamples.length && P && P.round && P.round.now) clockOffset = P.round.now - Date.now();
+    if(role === "player" && joined && P && !P.players.some(function(p){ return p.id === myId; })){ joined = false; route(); return; }
+    render();
+  } else if(m.kind === "adminState"){ A = m.st; if(role === "admin") render(); }
+  else if(m.kind === "notice"){
+    if(m.joinError){ $("joinErr").textContent = m.text; $("joinBtn").disabled = false; return; }
+    if(m.kicked){ joined = false; myName = ""; myToken = null; myId = null; ls("emojiCanli_name", null); ls("emojiCanli_token", null); toast(m.text); go(""); return; }
+    if(m.joined === true){
+      myId = m.id; myName = m.name; ls("emojiCanli_name", m.name);
+      if(m.token){ myToken = m.token; ls("emojiCanli_token", m.token); }
+      if(!joined){ joined = true; route(); }
+      return;
+    }
+    if(m.joined === false){
+      // sunucu bu oyuncuyu tanımıyor (ör. sunucu yeniden başladı): kayıtlı isimle tekrar katıl
+      joined = false; myToken = null; myId = null; ls("emojiCanli_token", null);
+      var sn = ls("emojiCanli_name");
+      if(sn && role === "player"){ toHost({ kind: "join", name: sn }); } else { route(); }
+      return;
+    }
+    if(m.bingo){ confetti(); toast(m.extra != null ? "🎯 Bir bingo daha!" + (m.extra ? " +" + m.extra + " puan" : "") : "🎯 BİNGO! Bonus puan kazandın!"); return; }
+    if(m.text) toast(m.text);
+  }
+});
+
+/* ---- yönlendirme ---- */
+function show(id){ ["vJoin","vAdminLogin","vGame"].forEach(function(v){ $(v).classList.toggle("hidden", v !== id); }); $("backAdmin").classList.add("hidden"); }
+// Görünüm, adres çubuğundaki #yonetici'den okunur ama butonlar doğrudan da geçiş yapar
+// (bazı gömülü görüntüleyiciler sayfa içi linkleri engelleyebiliyor).
+var curHash = (location.hash || "").replace("#", "");
+function go(h){
+  curHash = h;
+  try{ if((location.hash || "").replace("#", "") !== h){ if(h) location.hash = h; else history.replaceState(null, "", location.pathname + location.search); } }catch(e){}
+  route();
+}
+document.addEventListener("click", function(e){ var b = e.target.closest("[data-go]"); if(b){ e.preventDefault(); go(b.dataset.go); } });
+function route(){
+  var h = curHash;
+  if(h === "yonetici"){
+    if(adminAuthed){ role = "admin"; show("vGame"); render(); }
+    else { role = null; show("vAdminLogin"); setTimeout(function(){ $("pinInput").focus(); }, 50); }
+    return;
+  }
+  role = "player";
+  if(joined){ show("vGame"); render(); }
+  else { show("vJoin"); $("joinName").value = $("joinName").value || myName; $("joinBtn").disabled = false; renderJoinWait(); }
+}
+window.addEventListener("hashchange", function(){ var h = (location.hash || "").replace("#", ""); if(h !== curHash){ curHash = h; route(); } });
+
+function hostOnline(){ return Transport.connected() && Date.now() - lastStateAt < 12000; }
+function renderJoinWait(){
+  var err = $("joinErr");
+  if(!hostOnline() && !err.textContent) err.innerHTML = "<span class='wait-box'><span class='spinner'></span>Yönetici odayı açtığında katılabilirsin</span>";
+  else if(hostOnline() && err.querySelector && err.querySelector(".wait-box")) err.textContent = "";
+}
+
+/* ---- giriş formları ---- */
+function bindSubmit(id, fn){
+  var el = $(id);
+  el.querySelector("button").addEventListener("click", function(e){ e.preventDefault(); fn(e); });
+  el.addEventListener("keydown", function(e){ if(e.key === "Enter" && !e.isComposing){ e.preventDefault(); fn(e); } });
+}
+bindSubmit("joinForm", function(e){
+  e.preventDefault();
+  var n = $("joinName").value.trim();
+  if(n.length < 2){ $("joinErr").textContent = "Lütfen en az 2 harfli bir isim yaz."; return; }
+  if(!hostOnline()){ $("joinErr").textContent = "Oda henüz açık değil. Yönetici oyunu açınca tekrar dene."; return; }
+  $("joinErr").textContent = ""; $("joinBtn").disabled = true; myName = n;
+  toHost({ kind: "join", name: n });
+  setTimeout(function(){ if(!joined){ $("joinBtn").disabled = false; if(!$("joinErr").textContent) $("joinErr").textContent = "Yanıt gelmedi, tekrar dene."; } }, 3000);
+});
+bindSubmit("pinForm", function(e){
+  e.preventDefault();
+  var pin = $("pinInput").value.trim();
+  if(!pin){ $("pinErr").textContent = "PIN hatalı."; return; }
+  if(!Transport.connected()){ $("pinErr").textContent = "Sunucuya bağlanılamadı, tekrar dene."; return; }
+  Transport.send({ kind: "admin", pin: pin }, function(r){
+    if(r && r.ok){ adminAuthed = true; adminSession = r.session; $("pinErr").textContent = ""; $("pinInput").value = ""; route(); }
+    else { $("pinErr").textContent = (r && r.error) || "PIN hatalı."; }
+  });
+});
+
+/* ---- oyun içi formlar ---- */
+bindSubmit("guessForm", function(e){
+  e.preventDefault(); var t = $("guessInput").value.trim(); if(!t) return;
+  toHost({ kind: "guess", text: t }); $("guessInput").value = "";
+});
+$("bgrid").addEventListener("click", function(e){
+  var c = e.target.closest(".bc.click"); if(!c || role !== "player" || !PRIV) return;
+  var i = +c.dataset.i, marks = (PRIV.marks || []).slice(), k = marks.indexOf(i);
+  if(k === -1) marks.push(i); else marks.splice(k, 1);
+  PRIV.marks = marks; renderBingo();             // anında göster
+  toHost({ kind: "mark", marks: marks });
+});
+$("lbList").addEventListener("click", function(e){ var b = e.target.closest("[data-kick]"); if(b && role === "admin"){ if(b.dataset.sure){ adminCmd("kick", b.dataset.kick); } else { b.dataset.sure = "1"; b.textContent = "Çıkar?"; setTimeout(function(){ if(b.isConnected){ delete b.dataset.sure; b.textContent = "✕"; } }, 2500); } } });
+$("guessList").addEventListener("click", function(e){ var b = e.target.closest("[data-ov]"); if(!b) return; var a = b.dataset.ov.split("|"); adminCmd("override", a[0], +a[1], a[2] === "1"); });
+$("chatList").addEventListener("click", function(e){ var b = e.target.closest("[data-cb]"); if(b) adminCmd("cancelBingo", b.dataset.cb); });
+document.querySelectorAll("#chatTabs .tab").forEach(function(t){ t.onclick = function(){ chatTab = t.dataset.tab; renderChat(); }; });
+
+/* ---- yönetici butonları ---- */
+$("aStart").onclick = function(){ adminCmd("start"); };
+$("aPause").onclick = function(){ adminCmd("pause"); };
+$("aPlus").onclick = function(){ adminCmd("plus"); };
+$("aEnd").onclick = function(){ adminCmd("end"); };
+$("aNext").onclick = function(){ adminCmd("next"); };
+$("aSkip").onclick = function(){ adminCmd("skip"); };
+$("aPrev").onclick = function(){
+  var b = this;
+  if(b.dataset.sure){ clearTimeout(b._t); delete b.dataset.sure; b.textContent = "⏮ Önceki"; adminCmd("prev"); return; }
+  b.dataset.sure = "1"; b.textContent = "Önceki sorunun puanları silinecek, emin misin?";
+  b._t = setTimeout(function(){ delete b.dataset.sure; b.textContent = "⏮ Önceki"; }, 3000);
+};
+$("aFinal").onclick = function(){ if($("aFinal").dataset.sure){ delete $("aFinal").dataset.sure; $("aFinal").textContent = "🏁 Final"; adminCmd("final"); } else { $("aFinal").dataset.sure = "1"; $("aFinal").textContent = "Emin misin?"; setTimeout(function(){ delete $("aFinal").dataset.sure; $("aFinal").textContent = "🏁 Final"; }, 2500); } };
+$("aBots").onclick = function(){ adminCmd("bots"); };
+$("aLogout").onclick = function(){ adminAuthed = false; adminSession = null; A = null; Transport.send({ kind: "adminLogout" }); go("yonetici"); toast("Yönetici oturumu kapatıldı"); };
+$("aPreview").onclick = function(){ window.open(location.pathname, "_blank"); };
+$("aReset").onclick = function(){
+  var b = this;
+  if(b.dataset.sure){ clearTimeout(b._t); delete b.dataset.sure; b.textContent = "🔄 Oyunu sıfırla"; b.classList.remove("coral"); adminCmd("reset"); return; }
+  b.dataset.sure = "1"; b.textContent = "Her şey silinecek, emin misin?"; b.classList.add("coral");
+  b._t = setTimeout(function(){ delete b.dataset.sure; b.textContent = "🔄 Oyunu sıfırla"; b.classList.remove("coral"); }, 3000);
+};
+$("answerPeek").onclick = function(){ this.classList.toggle("show"); };
+$("aSettings").onclick = function(){
+  if(!A) return; var s = A.settings;
+  $("sDuration").value = s.duration; $("sNumQ").value = s.numQ; $("sShuffle").checked = !!s.shuffle; $("sShowCat").checked = !!s.showCat;
+  var pa = three(s.pts, [3,2,1]), ba = three(s.bingoPts, [5,3,2]);
+  $("sP1").value = pa[0]; $("sP2").value = pa[1]; $("sP3").value = pa[2]; $("sB1").value = ba[0]; $("sB2").value = ba[1]; $("sB3").value = ba[2]; $("sB4").value = s.bingoExtra != null ? s.bingoExtra : 1; $("sBingo").value = A.bingoText; $("sQs").value = A.qText;
+  $("settingsModal").classList.remove("hidden");
+};
+$("sCancel").onclick = function(){ $("settingsModal").classList.add("hidden"); };
+$("settingsModal").addEventListener("click", function(e){ if(e.target === this) this.classList.add("hidden"); });
+$("sSave").onclick = function(){
+  adminCmd("saveSettings", { settings: {
+    duration: Math.max(10, parseInt($("sDuration").value, 10) || 90), numQ: Math.max(1, parseInt($("sNumQ").value, 10) || 20),
+    shuffle: $("sShuffle").checked, showCat: $("sShowCat").checked, pts: [$("sP1").value, $("sP2").value, $("sP3").value].map(numOr0).join(","), bingoPts: [$("sB1").value, $("sB2").value, $("sB3").value].map(numOr0).join(","), bingoExtra: numOr0($("sB4").value)
+    }, bingoText: $("sBingo").value, qText: $("sQs").value });
+  $("settingsModal").classList.add("hidden");
+};
+$("sReset").onclick = function(){ var b = this; if(b.dataset.sure){ delete b.dataset.sure; b.textContent = "🔄 Oyunu sıfırla"; adminCmd("reset"); $("settingsModal").classList.add("hidden"); } else { b.dataset.sure = "1"; b.textContent = "Puanlar silinecek, emin misin?"; setTimeout(function(){ if(b.dataset.sure){ delete b.dataset.sure; b.textContent = "🔄 Oyunu sıfırla"; } }, 3000); } };
+
+/* =====================================================================
+   ÇİZİM
+   ===================================================================== */
+function render(){
+  if(role === "player" && !joined){ renderJoinWait(); return; }
+  if(!P){ return; }
+  var isAdmin = role === "admin";
+  $("adminBar").classList.toggle("hidden", !isAdmin);
+  $("aLogout").classList.toggle("hidden", !isAdmin);
+  $("chatTabs").classList.toggle("hidden", !isAdmin);
+  $("meChip").className = "me-chip" + (isAdmin ? " admin-badge" : "");
+  $("meChip").innerHTML = isAdmin ? "🎛 Yönetici" : avatar({ id: myId, name: myName }) + esc(myName);
+  var online = P.players.filter(function(p){ return p.online; }).length;
+  $("countPill").textContent = "👥 " + online + " çevrimiçi";
+  $("liveDot").classList.toggle("off", !hostOnline());
+  $("statusText").textContent = !hostOnline() ? "Bağlantı bekleniyor" : P.phase === "lobby" ? "Lobi" : P.phase === "question" ? "Canlı" : P.phase === "reveal" ? "Tur sonucu" : "Bitti";
+  $("bingoPanel").classList.toggle("hidden", P.phase === "final");   // finalde kürsüye yer aç
+  renderAdminBar(); renderBingo(); renderStage(); renderBoard(); renderChat(); renderFinal();
+}
+
+function renderAdminBar(){
+  if(role !== "admin" || !A) return;
+  var ph = P.phase;
+  $("aStart").classList.toggle("hidden", !(ph === "lobby" || ph === "final"));
+  $("aStart").textContent = ph === "final" ? "🔁 Yeni oyun başlat" : "▶ Oyunu başlat";
+  $("aStart").disabled = ph === "lobby" && !P.players.length;
+  ["aPause","aPlus","aEnd","aSkip"].forEach(function(id){ $(id).classList.toggle("hidden", ph !== "question"); });
+  $("aPrev").classList.toggle("hidden", !((ph === "question" || ph === "reveal") && P.pos > 0));
+  $("aNext").classList.toggle("hidden", ph !== "reveal");
+  $("aNext").textContent = P.pos + 1 >= P.total ? "🏁 Sonuçları göster" : "Sonraki soru →";
+  $("aFinal").classList.toggle("hidden", ph === "lobby" || ph === "final");
+  $("aPause").textContent = A.running ? "⏸ Duraklat" : "▶ Devam";
+  $("aBots").textContent = A.botsOn ? "🤖 Demoları kaldır" : "🤖 Demo oyuncular";
+  $("answerPeek").classList.toggle("hidden", !(ph === "question" || ph === "reveal"));
+  $("answerPeekTxt").textContent = A.answer || "—";
+}
+
+function renderBingo(){
+  var items = P.bingo || [], isAdmin = role === "admin", started = P.phase !== "lobby";
+  var marks = (!isAdmin && PRIV && PRIV.marks) || [], wins = winCells(marks);
+  var me = P.players.filter(function(p){ return p.id === myId; })[0];
+  $("bingoHint").innerHTML = isAdmin ? "Oyuncuların kartı. Kutudaki sayı, o cümleyi işaretleyen kişi sayısı. Bingo yapanlar: <b>" + (P.bingoWinners.length ? esc(P.bingoWinners.join(", ")) : "henüz yok") + "</b>"
+    : !started ? "Oyun başlayınca kutulara tıklayabileceksin. Satır, sütun ya da çaprazı ilk tamamlayan kazanır!"
+    : me && me.bingo ? "🎉 <b>Bingo yaptın!</b> Bonus puanın sıralamaya eklendi." + (P.bingoInfo.indexOf("sonraki") !== -1 ? " Devam et: her yeni satır, sütun ya da çapraz da puan kazandırır." : "")
+    : "Bu cümleleri toplantıda <b>duyunca</b> tıkla. Satır, sütun ya da çaprazı ilk tamamlayan kazanır! Bonus: <b>" + esc(P.bingoInfo) + "</b>";
+  $("bgrid").innerHTML = items.map(function(x, i){
+    var on = marks.indexOf(i) !== -1, w = wins.indexOf(i) !== -1;
+    var cls = "bc" + (!isAdmin && started ? " click" : "") + (on ? " on" : "") + (w ? " win" : "");
+    var cnt = isAdmin && A && A.markCount[i] ? "<span class='cnt'>" + A.markCount[i] + "</span>" : "";
+    return "<button type='button' class='" + cls + "' data-i='" + i + "' title='" + esc(x) + "'><span>" + esc(x) + "</span>" + cnt + "</button>";
+  }).join("");
+}
+
+var timerRAF = null;
+function renderStage(){
+  var body = $("stageBody"), ph = P.phase, q = P.q, isAdmin = role === "admin";
+  $("qcount").textContent = ph === "lobby" ? "Lobi" : ph === "final" ? "Bitti" : "Soru " + (P.pos + 1) + " / " + P.total;
+  $("catWrap").innerHTML = q && ph !== "lobby" ? (q.cat ? "<span class='cat'>" + esc(q.cat) + "</span>" : "<span class='cat lock'>🔒 Kategori gizli · 2 kat puan</span>") : "";
+  var key = ph + "|" + P.pos + "|" + (q ? q.extra : "") + "|" + (q ? q.answer : "") + "|" + (P.reveal ? P.reveal.winners.length : "") + "|" + (ph === "lobby" ? P.players.map(function(p){ return p.id; }).join(",") : "");
+  $("timerWrap").classList.toggle("hidden", ph !== "question");
+
+  if(key !== lastPhaseKey){
+    var phaseChanged = lastPhaseKey.split("|").slice(0, 2).join("|") !== key.split("|").slice(0, 2).join("|");
+    lastPhaseKey = key;
+    if(ph === "lobby"){
+      body.innerHTML = "<div class='lobby'><div style='font-size:64px'>🍿</div><h2>" + (isAdmin ? "Oyuncular katılıyor…" : "Hoş geldin, " + esc(myName) + "!") + "</h2>" +
+        "<p>" + (isAdmin ? "Herkes katılınca <b>Oyunu başlat</b>'a bas. Tek başına denemek için <b>Demo oyuncular</b>'ı kullanabilirsin." : "Yönetici oyunu başlattığında ilk soru burada belirecek. Tahminlerini sağdaki kutuya yazacaksın, sadece sen göreceksin 👀") + "</p>" +
+        "<div class='lobby-players'>" + P.players.map(function(p){ return "<span class='lp'>" + avatar(p) + esc(p.name) + "</span>"; }).join("") + "</div>" +
+        (isAdmin && !P.players.length ? "<p class='muted' style='font-size:13.5px'>Oyuncular bu sayfanın linkini açıp isimlerini yazarak katılır.</p>" : "") + "</div>";
+    } else if(ph === "question" && q){
+      body.innerHTML = "<div class='emojis'>" + esc(q.emojis) + "</div>" +
+        (q.extra ? "<div><div class='extra-l'>Ekstra ipucu</div><div class='extra'>" + esc(q.extra) + "</div></div>" : "");
+      if(phaseChanged && !isAdmin){ setTimeout(function(){ renderChat(); $("guessInput").focus(); }, 60); }
+    } else if(ph === "reveal" && q){
+      var ws = P.reveal ? P.reveal.winners : [];
+      body.innerHTML = "<div class='emojis' style='font-size:min(6vw,9vh)'>" + esc(q.emojis) + "</div>" +
+        "<div class='answer'>🎉 " + esc(q.answer) + "</div>" +
+        (ws.length ? "<div class='winners'>" + ws.slice(0, 8).map(function(w, i){ return "<span class='wchip' style='animation-delay:" + (i * .1) + "s'>" + avatar({ id: w.id, name: w.name }, 26) + (["🥇","🥈","🥉"][i] || (i + 1) + ".") + " " + esc(w.name) + " <b>+" + w.pts + "</b> <small>" + fmtSec(w.ms) + "</small></span>"; }).join("") + (ws.length > 8 ? "<span class='wchip' style='padding-left:12px'>+" + (ws.length - 8) + " kişi daha bildi</span>" : "") + "</div>"
+                   : "<div class='nobody'>Bu soruyu kimse bilemedi 😅</div>") +
+        (isAdmin ? "" : "<div class='muted' style='font-weight:800;font-size:13.5px;margin-top:4px'>Sonraki soru birazdan…</div>");
+      if(phaseChanged && !isAdmin && PRIV && PRIV.rank) confetti();
+    } else if(ph === "final"){ body.innerHTML = ""; }
+  }
+
+  var me = $("stageMe");
+  if(!isAdmin && PRIV && PRIV.rank && (ph === "question" || ph === "reveal")){ me.classList.remove("hidden"); me.textContent = "✅ Bildin! " + PRIV.rank + ". sıradasın"; }
+  else me.classList.add("hidden");
+  if(!timerRAF) tickTimer();
+}
+function tickTimer(){
+  timerRAF = requestAnimationFrame(tickTimer);
+  if(!P || P.phase !== "question" || !P.round) return;
+  var r = P.round, el = r.acc + (r.runningSince ? Math.max(0, serverNow() - r.runningSince) : 0), total = r.duration * 1000, left = Math.max(0, total - el);
+  var urgent = left <= 10000;
+  $("timerBar").style.transform = "scaleX(" + (left / total) + ")";
+  $("timerBar").classList.toggle("urgent", urgent);
+  $("timerNum").textContent = r.runningSince ? Math.ceil(left / 1000) + " sn" : "⏸ " + Math.ceil(left / 1000) + " sn";
+  $("timerNum").classList.toggle("urgent", urgent);
+  $("timerLabel").textContent = r.runningSince ? ((el >= total / 2 || (P.q && P.q.extra)) ? "💡 İpucu açıldı" : "İpucu " + Math.ceil((total / 2 - el) / 1000) + " sn sonra") : "Süre durduruldu";
+}
+
+function renderBoard(){
+  var ps = P.players.slice().sort(function(a, b){ return b.total - a.total || a.name.localeCompare(b.name, "tr"); }), isAdmin = role === "admin";
+  var n = ps.length, list = $("lbList");
+  list.classList.toggle("compact", n > 7);
+  // oyuncu kendi sırasını başlıkta her zaman görür (liste uzun olsa da)
+  var myRank = 0, r0 = 0, pv = null;
+  ps.forEach(function(p, i){ if(p.total !== pv){ r0 = i + 1; pv = p.total; } if(p.id === myId) myRank = r0; });
+  var meP = ps.filter(function(p){ return p.id === myId; })[0];
+  $("lbNote").innerHTML = !isAdmin && meP ? "<span class='lb-me'>Sen: " + myRank + ". · " + meP.total + " puan</span>" : esc(n + " oyuncu");
+  if(!ps.length){ $("lbList").innerHTML = "<div class='muted' style='text-align:center;font-weight:700;font-size:13.5px;padding:10px'>Henüz kimse katılmadı</div>"; return; }
+  var rank = 0, prev = null;
+  $("lbList").innerHTML = ps.map(function(p, i){
+    if(p.total !== prev){ rank = i + 1; prev = p.total; }
+    var tags = (p.bingo ? "<span class='lb-tag' title='Bingo yaptı'>🎯</span>" : "") + (P.phase === "question" && p.guessed ? "<span class='lb-tag' title='Tahmin gönderdi'>✍️</span>" : "");
+    return "<div class='lb-row" + (p.id === myId ? " me" : "") + (p.flash ? " flash" : "") + (p.online ? "" : " offline") + "' title='" + esc(p.name) + "'>" +
+      "<span class='lb-rank'>" + (rank === 1 && p.total > 0 ? "👑" : rank) + "</span>" + avatar(p, n > 7 ? 20 : 26) +
+      "<span class='lb-name'><span class='" + (p.online ? "on" : "off") + "'></span>" + esc(p.name) + tags + "</span>" +
+      "<span class='lb-pts'>" + p.total + (p.bonus ? "<small>+" + p.bonus + "🎯</small>" : "") + "</span>" +
+      (isAdmin ? "<button class='lb-x' data-kick='" + esc(p.id) + "' title='Oyundan çıkar'>✕</button>" : "") + "</div>";
+  }).join("");
+}
+
+function renderChat(){
+  var isAdmin = role === "admin", ph = P.phase;
+  document.querySelectorAll("#chatTabs .tab").forEach(function(t){ t.classList.toggle("on", t.dataset.tab === chatTab); });
+  var showGuesses = isAdmin && chatTab === "guesses";
+  $("chatTabs").classList.toggle("hidden", !isAdmin);
+  $("feedTitle").textContent = isAdmin ? "📣" : "✍️ Tahminlerin";
+  $("feedNote").classList.toggle("hidden", isAdmin);
+  $("chatList").classList.toggle("hidden", showGuesses);
+  $("guessList").classList.toggle("hidden", !showGuesses);
+  $("guessForm").classList.toggle("hidden", isAdmin);
+
+  var items = (P.chat || []).map(function(m){ return { t: m.t, kind: "pub", m: m }; });
+  if(!isAdmin && PRIV && PRIV.log){ PRIV.log.forEach(function(g){ items.push({ t: g.t, kind: "mine", g: g }); }); }
+  items.sort(function(a, b){ return a.t - b.t; });
+  var html = "";
+  items.forEach(function(it){
+    if(it.kind === "mine"){
+      html += "<div class='bub " + (it.g.ok ? "ok" : "no") + "'>" + esc(it.g.text) + "</div>";
+      if(it.g.ok) html += "<div class='bub-note'>Doğru! Puanın tur sonunda eklenecek 🎉</div>";
+      return;
+    }
+    var m = it.m;
+    if(!isAdmin && m.type === "correct" && m.pid === myId) return;
+    var cancel = isAdmin && m.type === "bingo" && P.players.some(function(p){ return p.id === m.pid && p.bingo; }) ? " <button class='btn sm' style='background:#fff;color:var(--coral);padding:2px 8px;margin-left:6px' data-cb='" + esc(m.pid) + "'>İptal et</button>" : "";
+    html += "<div class='msg " + esc(m.type) + "'>" + esc(m.text) + cancel + "</div>";
+  });
+  if(!html) html = "<div class='feed-empty'>" + (isAdmin ? "Oyun akışı burada görünecek." : "Soru gelince tahminlerini aşağıya yaz.<br>Doğru bulana kadar istediğin kadar deneyebilirsin.") + "</div>";
+  var list = $("chatList"), atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
+  if(list.dataset.h !== html){ list.innerHTML = html; list.dataset.h = html; if(atBottom || !list.dataset.init){ list.scrollTop = list.scrollHeight; list.dataset.init = "1"; } }
+
+  if(!isAdmin){
+    var inp = $("guessInput"), running = P.round && P.round.runningSince;
+    var dis = ph !== "question" || !!(PRIV && PRIV.rank) || !running;
+    inp.disabled = dis;
+    inp.placeholder = ph === "lobby" ? "Oyun başlayınca tahmin yapabilirsin" : ph === "reveal" ? "Sonraki soruyu bekle…" : ph === "final" ? "Oyun bitti 🏁" :
+      (PRIV && PRIV.rank) ? "Bildin! Diğerlerini bekliyoruz…" : !running ? "Süre durduruldu…" : "Tahminini yaz ve Enter'a bas…";
+    $("guessForm").querySelector("button").disabled = dis;
+  }
+
+  if(isAdmin && A){
+    var gl = $("guessList");
+    gl.innerHTML = (ph === "question" || ph === "reveal") && A.guesses.length
+      ? "<div class='muted' style='font-size:12px;font-weight:800;margin-bottom:2px'>Sadece sen görüyorsun. Yanlış değerlendirilen tahmini düzeltebilirsin.</div>" +
+        A.guesses.map(function(g){
+          return "<div class='gl-row" + (g.ok ? " ok" : "") + "'>" + (g.ok ? "✅" : "❌") + " <b>" + esc(g.name) + "</b>: " + esc(g.text) +
+            "<span class='t'>" + fmtSec(g.ms) + "</span><button data-ov='" + esc(g.pid) + "|" + g.gi + "|" + (g.ok ? "0" : "1") + "'>" + (g.ok ? "Yanlış say" : "Doğru say") + "</button></div>";
+        }).join("")
+      : "<div class='muted' style='text-align:center;font-weight:700;font-size:13px;padding:14px'>Bu turda henüz tahmin yok</div>";
+  }
+}
+
+function renderFinal(){
+  var f = $("final");
+  if(P.phase !== "final"){ f.classList.add("hidden"); f.dataset.done = ""; return; }
+  f.classList.remove("hidden");
+  var ps = P.players.slice().sort(function(a, b){ return b.total - a.total; });
+  var html = "<div style='font-size:52px'>🏆</div><h1>Final sıralaması</h1>";
+  var top = [ps[1], ps[0], ps[2]], cls = ["p2","p1","p3"], medal = ["2","1","3"];
+  html += "<div class='podium'>" + top.map(function(p, i){
+    if(!p) return "";
+    return "<div class='pod " + cls[i] + "' style='animation-delay:" + [.3,.6,0][i] + "s'>" + avatar(p) + "<div class='pod-name'>" + esc(p.name) + "</div><div class='pod-pts'>" + p.total + " puan" + (p.bonus ? " · 🎯+" + p.bonus : "") + "</div><div class='pod-block'>" + medal[i] + "</div></div>";
+  }).join("") + "</div>";
+  html += "<table class='final-table'><thead><tr><th>#</th><th>Oyuncu</th><th class='n'>Tahmin</th><th class='n'>Bingo</th><th class='n'>Toplam</th></tr></thead><tbody>" +
+    ps.map(function(p, i){ return "<tr" + (p.id === myId ? " style='background:#fff4d6'" : "") + "><td>" + (i + 1) + "</td><td>" + esc(p.name) + (p.bingo ? " 🎯" : "") + "</td><td class='n'>" + p.pts + "</td><td class='n'>" + (p.bonus ? "+" + p.bonus : "–") + "</td><td class='n'><b>" + p.total + "</b></td></tr>"; }).join("") + "</tbody></table>";
+  if(role === "admin") html += "<div class='muted' style='font-weight:800;font-size:13px'>Yeni oyun için üstteki <b>Yeni oyun başlat</b> butonunu kullan.</div>";
+  if(f.dataset.h !== html){ f.innerHTML = html; f.dataset.h = html; }
+  if(!f.dataset.done){ f.dataset.done = "1"; confetti(); }
+}
+
+/* =====================================================================
+   BAŞLAT
+   ===================================================================== */
+setInterval(function(){
+  if(role === "player" && !joined) renderJoinWait();
+  if(P && (role === "admin" || joined)){ $("liveDot").classList.toggle("off", !hostOnline()); if(!hostOnline()) $("statusText").textContent = "Bağlantı bekleniyor"; }
+}, 3000);
+
+setInterval(syncClock, 5000);   // saat eşitleme + bağlantı kontrolü
+
+route();
+})();
+</script>
+</body>
+</html>
