@@ -1,0 +1,16 @@
+“Sesim geliyor mu?”
+“Bunu biliyordum!”
+“Çok kolaydı”
+“İpucu ver”
+“Bu ne alaka?”
+“Kopya çektin!”
+“Pas”
+“Bir daha göster”
+“Bu da kabul edilmeli!”
+“Ben bu diziyi hiç izlemedim”
+“Kaç saniye kaldı?”
+“Benim cevabım daha önceydi!”
+“Aklımın ucundaydı!”
+“Yok artık!”
+“Dur dur, söyleme!”
+“Bu çok zordu”

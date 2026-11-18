@@ -1,0 +1,30 @@
+{
+  "name": "emoji-oyunu",
+  "version": "1.0.0",
+  "description": "Emoji Tahmin + Bingo — ekip toplantıları için canlı oyun",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/oyun.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/buketgencer/emoji-oyunu.git"
+  },
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/buketgencer/emoji-oyunu/issues"
+  },
+  "homepage": "https://github.com/buketgencer/emoji-oyunu#readme",
+  "dependencies": {
+    "express": "^4.22.3",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true
+}
